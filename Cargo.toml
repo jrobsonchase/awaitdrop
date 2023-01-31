@@ -1,0 +1,13 @@
+[package]
+name = "awaitdrop"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "yet another WaitGroup"
+repository = "https://github.com/jrobsonchase/awaitdrop"
+
+[dependencies]
+futures = "0.3.26"
+generational-arena = "0.2.8"
+parking_lot = "0.12.1"
+slotmap = "1.0.6"
