@@ -1,10 +1,11 @@
 [package]
 name = "awaitdrop"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "yet another WaitGroup"
 repository = "https://github.com/jrobsonchase/awaitdrop"
+documentation = "https://docs.rs/awaitdrop"
 
 [dependencies]
 futures = "0.3.26"
