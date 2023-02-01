@@ -4,13 +4,16 @@ None of the existing crates fit my needs exactly, so here's one more that
 (hopefully) will. 
 
 Highlights:
-* Generalizes "tasks" to [Ref]s. More of a change in nomenclature than
+* Generalizes "tasks" to [Ref][ref]s. More of a change in nomenclature than
   anything else. It's not always a group of tasks you're waiting on - it
   could be that you're waiting on a gaggle of structs to all be dropped.
-* [Ref]s and [Waiter]s are entirely disjoint. You don't need a [Waiter] to
-  create a new [Ref].
-* Everything is cloneable and behaves as one would expect - cloned [Ref]s
-  will all block every cloned [Waiter], which can be awaited concurrently.
+* [Ref][ref]s and [Waiter][waiter]s are entirely disjoint. You don't need a
+  [Waiter][waiter] to create a new [Ref][ref].
+* Everything is cloneable and behaves as one would expect - cloned [Ref][ref]s
+  will all block every cloned [Waiter][waiter], which can be awaited concurrently.
+
+[ref]: https://docs.rs/awaitdrop/latest/awaitdrop/struct.Ref.html
+[waiter]: https://docs.rs/awaitdrop/latest/awaitdrop/struct.Waiter.html
 
 # License
 
