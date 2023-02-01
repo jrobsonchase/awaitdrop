@@ -1,8 +1,8 @@
 //! Yet another WaitGroup implementation.
-//! 
+//!
 //! None of the existing crates fit my needs exactly, so here's one more that
-//! (hopefully) will. 
-//! 
+//! (hopefully) will.
+//!
 //! Highlights:
 //! * Generalizes "tasks" to [Ref]s. More of a change in nomenclature than
 //!   anything else. It's not always a group of tasks you're waiting on - it
@@ -21,8 +21,8 @@ use std::{
     },
     pin::Pin,
     sync::{
+        self,
         Arc,
-        Weak,
     },
     task::{
         Context,
@@ -67,12 +67,46 @@ impl Wakers {
 }
 
 /// A reference whose drop can be awaited
-/// 
+///
+/// When cloned, creates a new reference attached to the same [Waiter].
+#[derive(Clone)]
+pub struct Weak {
+    count: Option<sync::Weak<()>>,
+    wakers: Arc<Mutex<Wakers>>,
+}
+
+impl Weak {
+    /// Attempt to upgrade to a strong [Ref]
+    pub fn upgrade(&self) -> Option<Ref> {
+        let weak = self.count.as_ref()?;
+        let strong = sync::Weak::upgrade(weak)?;
+
+        Some(Ref {
+            count: Some(strong),
+            wakers: self.wakers.clone(),
+        })
+    }
+}
+
+/// A reference whose drop can be awaited
+///
 /// When cloned, creates a new reference attached to the same [Waiter].
 #[derive(Clone)]
 pub struct Ref {
     count: Option<Arc<()>>,
     wakers: Arc<Mutex<Wakers>>,
+}
+
+impl Ref {
+    /// Get a new [Weak] that doesn't contribute to the ref count.
+    pub fn downgrade(&self) -> Weak {
+        let strong = self.count.as_ref().unwrap();
+        let weak = Arc::downgrade(strong);
+        Weak {
+            count: Some(weak),
+            wakers: self.wakers.clone(),
+        }
+    }
 }
 
 impl Drop for Ref {
@@ -88,7 +122,7 @@ impl Drop for Ref {
 #[derive(Clone)]
 pub struct Waiter {
     wakers: Arc<Mutex<Wakers>>,
-    count: Weak<()>,
+    count: sync::Weak<()>,
 }
 
 impl Waiter {
@@ -107,11 +141,11 @@ impl Waiter {
 }
 
 /// The future returned from [Waiter::wait]
-/// 
+///
 /// Resolves when all connected [Ref]s have been dropped.
 pub struct WaitFuture {
     idx: DefaultKey,
-    count: Weak<()>,
+    count: sync::Weak<()>,
     wakers: Arc<Mutex<Wakers>>,
 }
 
@@ -126,7 +160,7 @@ impl Future for WaitFuture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.wakers.lock().insert(self.idx, cx.waker().clone());
-        if Weak::strong_count(&self.count) == 0 {
+        if sync::Weak::strong_count(&self.count) == 0 {
             Poll::Ready(())
         } else {
             Poll::Pending
@@ -143,7 +177,7 @@ impl IntoFuture for Waiter {
 }
 
 /// Create a new [Ref] and [Waiter]
-/// 
+///
 /// The [Waiter] will resolve when the [Ref] and all clones of it have been
 /// dropped.
 pub fn awaitdrop() -> (Ref, Waiter) {
